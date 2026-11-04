@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>答题练习</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;padding:24px 16px 60px;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#2d3748;background:linear-gradient(160deg,#eef2ff 0%,#f8fafc 45%,#fdf2f8 100%);background-attachment:fixed}
+.app{max-width:780px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+header h1{font-size:20px;margin:0;letter-spacing:.5px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:14px;cursor:pointer;border:1px solid transparent;border-radius:10px;padding:9px 14px;background:#fff;color:#2d3748;box-shadow:0 1px 3px rgba(16,24,40,.08);transition:all .18s ease}
+button:hover:not(:disabled){box-shadow:0 6px 16px rgba(16,24,40,.12);transform:translateY(-1px)}
+button:active:not(:disabled){transform:translateY(0)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.active{background:#eef2ff;border-color:#c7d2fe;color:#4f46e5}
+button.primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;background:#ef4444;color:#fff;font-size:11px;line-height:18px;text-align:center}
+.progress{height:8px;background:#e7ebf5;border-radius:99px;overflow:hidden}
+.progress>div{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#667eea,#a855f7);transition:width .35s ease}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:#8a94a6;margin:10px 4px 14px}
+.card{background:#fff;border-radius:18px;padding:26px;box-shadow:0 12px 32px rgba(31,41,55,.08)}
+.question{font-size:17px;font-weight:600;line-height:1.7;margin-bottom:20px;white-space:pre-wrap;word-break:break-word}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:2px solid #e5e9f2;border-radius:12px;background:#fff;cursor:pointer;line-height:1.6;font-size:15px;transition:all .15s ease;user-select:none;word-break:break-word}
+.option:not(.disabled):hover{border-color:#c7d2fe;background:#f8faff}
+.option .label{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:#eef1fb;color:#5b6ef5;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s ease}
+.option.selected{border-color:#667eea;background:#eef2ff}
+.option.selected .label{background:#667eea;color:#fff}
+.option.correct{border-color:#22c55e;background:#f0fdf4}
+.option.correct .label{background:#22c55e;color:#fff}
+.option.wrong{border-color:#ef4444;background:#fef2f2}
+.option.wrong .label{background:#ef4444;color:#fff}
+.option.disabled{cursor:default}
+.feedback{margin-top:16px;padding:13px 15px;border-radius:12px;font-size:14px;line-height:1.7;display:none;white-space:pre-wrap}
+.feedback.show{display:block}
+.feedback.ok{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.feedback.no{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.actions{display:flex;gap:10px;margin-top:22px}
+.actions button{flex:1;padding:13px;font-size:15px;font-weight:600;border-radius:12px}
+.hidden{display:none!important}
+.result{text-align:center;padding:40px 26px}
+.res-emoji{font-size:56px;line-height:1}
+.res-title{font-size:22px;font-weight:700;margin-top:14px}
+.res-score{font-size:46px;font-weight:800;margin:12px 0 4px;background:linear-gradient(135deg,#667eea,#a855f7);-webkit-background-clip:text;background-clip:text;color:transparent}
+.res-score span{font-size:20px;-webkit-text-fill-color:#b0b7c6}
+.res-rate{color:#8a94a6;font-size:14px}
+.result .actions{max-width:420px;margin:26px auto 0}
+.panel{position:fixed;inset:0;z-index:100;padding:20px;background:rgba(17,24,39,.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center}
+.panel-inner{background:#fff;border-radius:18px;width:100%;max-width:720px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eef1f6}
+.panel-head h2{margin:0;font-size:17px}
+button.close{padding:6px 12px;border-radius:8px;background:#f3f4f8;box-shadow:none}
+.wrong-list{flex:1;overflow-y:auto;padding:16px 20px}
+.wrong-item{padding:12px 14px;border-radius:12px;background:#f8fafc;margin-bottom:10px;border:1px solid #eef1f6}
+.wrong-item .wq{font-weight:600;font-size:14.5px;line-height:1.65;margin-bottom:6px;white-space:pre-wrap}
+.wrong-item .wa{font-size:13.5px;color:#16a34a;line-height:1.65;white-space:pre-wrap}
+.empty{text-align:center;color:#9aa3b2;padding:40px 0;font-size:14px}
+.panel-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid #eef1f6}
+.panel-foot button{flex:1;padding:12px;font-weight:600}
+.toast{position:fixed;left:50%;bottom:40px;transform:translate(-50%,20px);background:rgba(30,41,59,.92);color:#fff;padding:10px 20px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:200}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:520px){body{padding:14px 12px 40px}.card{padding:20px 16px}.question{font-size:16px}.option{font-size:14.5px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>📝 答题练习</h1>
+    <div class="toolbar">
+      <button id="btnShuffleQ" class="active">🔀 打乱题目：开</button>
+      <button id="btnShuffleO">🎲 选项乱序：关</button>
+      <button id="btnWrong">📕 错题本 <span class="badge" id="wrongCount">0</span></button>
+    </div>
+  </header>
+
+  <div class="progress"><div id="bar"></div></div>
+  <div class="meta"><span id="qnum"></span><span id="scoreText"></span></div>
+
+  <main id="card" class="card">
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="actions">
+      <button id="btnSubmit" class="primary">提交答案</button>
+      <button id="btnNext" class="primary hidden">下一题 →</button>
+    </div>
+  </main>
+
+  <div id="result" class="card result hidden"></div>
+</div>
+
+<div id="wrongPanel" class="panel hidden">
+  <div class="panel-inner">
+    <div class="panel-head">
+      <h2>📕 错题本</h2>
+      <button class="close" id="closeWrong">✕</button>
+    </div>
+    <div class="wrong-list" id="wrongList"></div>
+    <div class="panel-foot">
+      <button class="primary" id="practiceWrong">开始练习错题</button>
+      <button id="clearWrong">清空错题本</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+  const DATA = [{"q":"下面不属于 “政绩观三问” 的是（）。","options":["政绩为谁而树","中国特色社会主义进入新时代","树什么样的政绩","靠什么树政绩"],"answer":[1]},{"q":"下列哪项不属于重点纠治的共性偏差（）。","options":["重显绩轻潜绩","注重调查研究","急功近利","新官不理旧账"],"answer":[1]},{"q":"此次学习教育的推进原则是（）。","options":["分批次、划阶段推进","分批次、不划阶段推进","不分批次、不划阶段推进","按季度分阶段推进"],"answer":[2]},{"q":"“七一”前后，党支部书记应为支部党员讲几次专题党课（）。","options":["1次","2次","3次","不限次数"],"answer":[0]},{"q":"完善一体推进不敢腐、不能腐、不想腐工作机制，着力铲除腐败滋生的土壤和条件。健全（）和（）同查同治机制，深化整治权力集中、资金密集、资源富集领域腐败。","options":["腐败之风、纪律问题","腐败之风、廉洁问题","不正之风、腐败问题","不正之风、纪律问题"],"answer":[2]},{"q":"习近平总书记关于党的建设的重要思想，坚持（），既讲是什么、又讲为什么，既讲抓什么、又讲怎么抓，蕴含着丰富的政治智慧、规律启示和策略方法。","options":["大局观念","全局观念","系统观念","统筹兼顾"],"answer":[2]},{"q":"深入推进党的自我革命，在实践中需要以（）为根本目的。","options":["跳出历史周期率","引领伟大社会革命","坚持党中央集中统一领导","正风肃纪反腐"],"answer":[1]},{"q":"习近平党建思想的内涵要义集中体现为（）。","options":["\"十个坚持\"","\"十二个坚持\"","\"十三个坚持\"","\"十四个坚持\""],"answer":[3]},{"q":"习近平党建思想围绕的重大时代课题是（）。","options":["建设什么样的长期执政的马克思主义政党、怎样建设长期执政的马克思主义政党","什么是社会主义、怎样建设社会主义","实现什么样的发展、怎样发展","建设什么样的党、怎样建设党"],"answer":[0]},{"q":"新时代党的建设总体布局中摆在首位的是（）。","options":["思想建设","组织建设","政治建设","作风建设"],"answer":[2]},{"q":"全面从严治党，核心是（）。","options":["加强党的领导","严明纪律","反腐败","作风建设"],"answer":[0]},{"q":"关于政治功能和组织功能，下列说法正确的是（）。","options":["组织属性是党组织的根本属性。","组织功能是党组织的基本功能","组织功能服务于政治功能","政治功能是发挥党组织政治功能的基础和保证"],"answer":[2]},{"q":"关于纠治“四风”，以下说法错误的是（）","options":["形式主义实质是主观主义、功利主义，根源是政绩观错位、责任心缺失。","官僚主义实质是封建残余思想作祟，根源是官本位思想严重、权力观扭曲。","享乐主义实质是革命意志衰退、奋斗精神消减，根源是世界观、人生观、价值观不正确。","奢靡之风实质是剥削阶级思想和腐朽生活方式的反映，根源是思想堕落、物欲膨胀。","把纠治官僚主义、享乐主义摆在更加突出位置，作为作风建设的重点任务。"],"answer":[4]},{"q":"价值（）人民币及以上的礼品应按程序登记上交，持有人应在收受礼品之日起（）内，由本人如实填写礼品登记表，并向本单位纪检监察机构上交礼品和礼品登记表。","options":["200元,一个月","500元,三个月","200元,三个月","500元,一个月"],"answer":[0]},{"q":"2026年春节假期后 、7月底基本结束的学习教育是？（）","options":["学习贯彻习近平新时代中国特色社会主义思想主题教育","树立和践行正确的政绩观学习教育","党纪学习教育","深入贯彻中央八项规定精神学习教育"],"answer":[1]},{"q":"专题调研要在结束后及时撰写调研报告，报告篇幅一般不超过（）字。","options":["1000","2000","3000","5000"],"answer":[1]},{"q":"党员“双零”是指？（）","options":["党员零迟到，党员身边零迟到","党员零投诉，党员身边零投诉","党员零请假，党员身边零请假","党员零失误，党员身边零失误"],"answer":[1]},{"q":"党员“双无”是指？（）","options":["党员无违纪，党员身边无违纪","党员无违章，党员身边无违章","党员无失误，党员身边无失误","党员无差错，党员身边无差错"],"answer":[1]},{"q":"风电公司党支部2026年书记项目是？（）","options":["安风体系通过三钻评级","完成筒型基础风机并网投产","深化安风体系应用，争取达标3钻2星水平","推进集控、应急指挥中心建设"],"answer":[2]},{"q":"风电公司党支部2026年建立的党员突击队名称是？（）","options":["集控、应急指挥中心建设党员突击队","科技项目党员突击队","两台筒型基础风机并网发电项目党员突击队","重点实验室建设党员突击队"],"answer":[3]},{"q":"党委每届任期一般为（ ）年，党总支和党支部每届任期一般为（ ）年。","options":["3,3","3,5","5,3","5,5"],"answer":[2]},{"q":"基层党组织任期届满前，要主动与上级党组织沟通换届情况，召开党员大会的，一般提前（ ），召开党员代表大会的，一般提前4个月书面报送换届请示。如需延期或提前进行换届选举，应报上级党组织批准，延长或者提前期限一般不超过（ ）。","options":["1个月，半年","3个月，1年","1个月，1年","3个月，半年"],"answer":[2]},{"q":"倡导“按期早换”，鼓励在任期届满日期前（）内尽早换届。","options":["15天","30天","60天","90天"],"answer":[1]},{"q":"2026年党建责任制考评价等次为\"好\"的一般不超过（）。","options":["0.3","0.5","0.4","20%"],"answer":[1]},{"q":"2026年党建责任制考核内容聚焦于哪八个方面？","options":["政治建设、思想建设、组织建设、作风建设、纪律建设、深入推进反腐败斗争、推动党建工作与生产经营深度融合、落实年度重点任务","政治建设、思想建设、组织建设、制度建设、作风建设、纪律建设、队伍建设、文化建设","政治建设、经济建设、组织建设、作风建设、纪律建设、制度建设、队伍建设、文化建设","政治建设、思想建设、组织建设、作风建设、纪律建设、廉洁建设、队伍建设、能力建设"],"answer":[0]},{"q":"2026年党建责任制考核中下列哪项属于\"不得评为'好'\"的红线情形","options":["单位领导班子成员发生违法犯罪案件","全年保密检查扣分超过11分","出现与拥护\"两个确立\"相背离的情况","发生三级及以上生产安全事件的责任单位"],"answer":[3]},{"q":"党支部委员之间、委员与党员之间、党员与党员之间，每年谈心谈话不少于（）。","options":["1次","2次","3次","4次"],"answer":[0]},{"q":"工会、共青团、妇联等群团组织是党领导下的政治组织，（）是群团组织的灵魂。","options":["群众性","组织性","政治性","阶级性"],"answer":[2]},{"q":"以下哪一项不属于南方电网公司培育“知行”文化的特色实践？","options":["知行大讲堂","《南网知行》文化内刊","知行文化竞赛","知行教育帮扶"],"answer":[2]},{"q":"网公司文化强企建设的“强企特征”是什么？","options":["文化管理强、价值共识广、传播影响大","文化管理强、科技创新快、品牌影响广","价值共识广、传播影响大、经济效益高","文化管理强、传播影响大、国际竞争力强"],"answer":[0]},{"q":"网公司文化强企建设的“工作目标”不包括以下哪一项？","options":["建设一流文化管理体系","凝聚知行合一价值共识","提升企业经济效益","彰显南网文化独特魅力"],"answer":[2]},{"q":"“彰显南网文化独特魅力”的工作任务不包括以下哪一项？","options":["培育文化使者","塑造文化坐标","提升企业利润","擦亮文化形象"],"answer":[2]},{"q":"在什么情况下，单位三年内不得参加“安全文化示范单位”评选？","options":["发生重大群体性事件","发生电力生产安全事故","组织绩效被评为C级","被主流新闻媒体曝光"],"answer":[1]},{"q":"如果某单位中层干部发生严重违纪违法问题，该单位不得参加哪类评选？","options":["企业文化示范单位和问题所属领域的专业文化示范单位","安全文化示范单位和班站所文化示范点","法治文化示范单位和廉洁文化示范单位","科技创新示范单位和组织绩效示范单位"],"answer":[0]},{"q":"某班站所因舆情事件被主流媒体曝光并造成严重影响，该班站所不得参加哪项评选？","options":["企业文化示范单位","班站所文化示范点","安全文化示范单位","组织绩效示范单位"],"answer":[1]},{"q":"某单位组织绩效被评为C级，会导致其无法参评哪类示范单位？","options":["企业文化示范单位和相关专业文化示范单位","安全文化示范单位和班站所文化示范点","廉洁文化示范单位和法治文化示范单位","科技创新示范单位和组织绩效示范单位"],"answer":[0]},{"q":"坚持“双培养一输送”，将（ ）作为青年科技人才培养的重要支撑。","options":["红苗计划","薪火工程","青马工程","铸魂计划"],"answer":[2]},{"q":"青年文明号的基本条件是以青年为创建主体、建制保持稳定的工作集体，人数一般在（），其中35周岁以下青年人数占（）以上，有一名不超过（）的集体负责人担任号长。","options":["3人以上、200人以下；50%；35周岁","6人以上、200人以下；60%；40周岁","3人以上、200人以下；60%；35周岁","6人以上、200人以下；50%；40周岁"],"answer":[3]},{"q":"青年岗位能手实行（）。在公司举办的技术技能竞赛中获奖并符合条件的青年，根据竞赛表彰文件授予公司青年岗位能手称号。","options":["认定制","授予制","竞赛制","评选制"],"answer":[0]},{"q":"青年突击队成立的基本条件是35周岁以下青年占（）以上，队长应为政治坚定、业务过硬的工作骨干，年龄一般不超过（）。","options":["50%；35周岁","60%；35周岁","50%；40周岁","60%；40周岁"],"answer":[1]},{"q":"年满（）的中国工人、农民、军人、知识分子和其他社会阶层的先进分子，承认党的纲领和章程，愿意参加党的一个组织并在其中积极工作、执行党的决议和按期交纳党费的，可以申请加入中国共产党。","options":["十六岁","十七岁","十八岁","二十岁"],"answer":[2]},{"q":"(    )由党员大会或代表大会选举产生","options":["基层委员会","总支部委员会","支部委员会","党的工作委员会"],"answer":[0]},{"q":"留党察看最长不超过(  )年","options":["半","一","两","三"],"answer":[2]},{"q":"有正式党员多少人以上的党支部应当设立党支部委员会？","options":["5","7","9","10"],"answer":[1]},{"q":"“三会一课”中的“三会”是指：","options":["党员大会、党小组会、民主生活会","党员大会、党支部委员会、党小组会","党支部委员会、组织生活会、党课","党员代表大会、支委会、党小组会"],"answer":[1]},{"q":"党支部民主评议党员一般每年开展几次？","options":["1","2","3","4"],"answer":[0]},{"q":"国有企业党委由党员大会或者党员代表大会选举产生，每届任期一般为(  )年。党总支和支部委员会由党员大会选举产生，每届任期一般为(  )年。","options":["5,5","5,3","3,3","3,5"],"answer":[1]},{"q":"加强对党支部书记和党务工作人员的培训，确保党支部书记和党务工作人员每年至少参加(  )次集中培训。新任党支部书记一般应当在(  )年内完成任职培训","options":["1,1","1,半","2，1","2，半"],"answer":[1]},{"q":"对于本年度公司党委政治巡察已覆盖到的单位，在党建责任制考核现场调研中的安排是（）。","options":["正常开展集中现场调研","不再专门开展集中现场调研","仅开展个别访谈，不查阅资料","由上级党组织直接进行评价"],"answer":[1]},{"q":"被巡察党支部未及时向公司纪委报送集中整改进展情况报告，属于哪类扣分项目（）。","options":["违规问题类","发挥作用类","规定动作类","红线事项类"],"answer":[2]},{"q":"\"政绩观三问\"是指（）。","options":["政绩为谁而树","为什么树政绩","树什么样的政绩","靠什么树政绩"],"answer":[0,2,3]},{"q":"学习教育的主要内容包括（ ）","options":["学习研讨","查摆问题","整改整治","建章立制","开门教育"],"answer":[0,1,2,3,4]},{"q":"专项集中整治针对的突出问题包括（ ）","options":["新官不理旧账","急功近利","弄虚作假","搞\"形象工程\"\"政绩工程\"","政策规划\"翻烧饼\""],"answer":[0,1,2,3,4]},{"q":"下列属于\"四个反对\"的内容有（ ）","options":["反对急功近利、寅吃卯粮","反对搞\"形象工程\"\"政绩工程\"","反对重\"显绩\"轻\"潜绩\"","反对重\"面子\"轻\"里子\""],"answer":[0,1,2,3]},{"q":"办好中国的事情，关键在党、关键在全面从严治党。新征程上，要永远保持赶考的清醒和坚定，认真落实全面从严治党政治责任，始终坚持（）、（）、（），抓思想从严、监督从严、执纪从严、治吏从严、作风从严、反腐从严。","options":["严的作风","严的基调","严的纪律","严的措施","严的氛围"],"answer":[1,3,4]},{"q":"关于党的领导，以下说法正确的是（）","options":["坚持党的领导是重大原则问题","我们脑子要特别清醒、眼睛要特别明亮、立场要特别坚定，决不能羞羞答答、语焉不详","决不能遮遮掩掩、搞自我麻痹，决不能有任何含糊和动摇","在这个问题上犯错误往往是灾难性的、颠覆性的。"],"answer":[0,1,2,3]},{"q":"关于如何健全全面从严治党体系，以下说法正确的是（）","options":["健全上下贯通、执行有力的组织体系","健全固本培元、凝心铸魂的教育体系","健全精准发力、标本兼治的监管体系。促进各类监督贯通协调","健全科学完备、有效管用的制度体系","健全主体明确、要求清晰的责任体系"],"answer":[0,1,2,3,4]},{"q":"关于党的各级组织，以下说法正确的是（）。","options":["各级党委是党的基础组织，担负着直接教育党员、管理党员、监督党员和组织群众、宣传群众、凝聚群众、服务群众的职责。","中央和国家机关是贯彻落实党中央决策部署的“最初一公里”","基层党组织是党的肌体的“神经末梢”","基层党组织是贯彻落实党中央决策部署的“最后一公里”","党的各级纪委是党内监督专责机关，监督党的委员会推进全面从严治党、加强党风建设和组织协调反腐败工作，推动完善党和国家监督体系"],"answer":[1,2,3]},{"q":"习近平党建思想源自于（）。","options":["马克思主义科学理论","中华优秀传统文化","新时代全面从严治党的伟大实践","西方政党理论"],"answer":[0,1,2]},{"q":"新时代党的建设总体布局包括（）。","options":["政治建设","思想建设","组织建设","作风建设","纪律建设","制度建设贯穿其中，深入推进反腐败斗争"],"answer":[0,1,2,3,4,5]},{"q":"健全全面从严治党体系需要从哪些方面作出部署（）。","options":["健全组织体系","健全教育体系","健全监管体系","健全制度体系","健全责任体系"],"answer":[0,1,2,3,4]},{"q":"理想信念被定位为共产党人的（）。","options":["安身立命的根本","政治灵魂","精神支柱","行动指南"],"answer":[0,1,2]},{"q":"党建“三基”分别是（）。","options":["基本组织","基本队伍","基本制度","基本措施"],"answer":[0,1,2]},{"q":"企业“三基”分别是（）。","options":["基层","基础","基本技能","基本班组"],"answer":[0,1,2]},{"q":"机关基层党组织要坚持（），推动党建工作和业务工作深度融合、相互促进。","options":["围绕中心","建设队伍","服务群众","聚焦主线","服务大局"],"answer":[0,1,2]},{"q":"关于抓好党建工作责任制，以下说法正确的是（）","options":["抓党建必须抓责任制","抓责任制必须抓责任人","抓责任人必须抓第一责任人","党委书记要履行第一责任人职责","其他领导干部要履行“一岗双责”"],"answer":[0,1,2,3,4]},{"q":"关于党内法规体系的内容，以下说法正确的是（）","options":["完善“两个维护”制度机制","完善党的领导法规制度","完善党的组织法规制度","完善党的自身建设法规制度","完善党的监督保障法规制度"],"answer":[0,1,2,3,4]},{"q":"2026年风电公司党支部增加了哪些党建工作举措？","options":["“有事找书记”","党员积分管理","落实“五个真”作风建设要求  为基层减负十项举措","“暖心护航”员工关怀综合台账"],"answer":[0,1,2,3]},{"q":"2026年风电公司党支部有关学习教育的主题党日主题有哪些？","options":["树立和践行正确政绩观 以实干实绩推进高质量发展","树立和践行正确政绩观 笃行绿色双碳路","求真务实勇担当 实干实绩践初心","学思践悟党建思想  砥砺坚守正确政绩","深入学习贯彻习近平党建思想 以高质量党建引领保障企业行稳致远","慎终如始持续发力 推动学习教育圆满收官"],"answer":[0,1,2,3,4,5]},{"q":"“三不腐”指的是什么？","options":["不敢腐","不能腐","不想腐","不要腐"],"answer":[0,1,2]},{"q":"提升发展党员质量，重视在（）中发展党员。","options":["生产经营一线","青年职工","高知识群体","公司领导"],"answer":[0,1,2]},{"q":"基层党支部教育管理监督党员职责，党支部要（）。","options":["主动参与","有效参与","发挥作用","引领基层治理"],"answer":[1,3]},{"q":"2026年党建责任制考核管党治党重要指标包括（）。","options":["党建工作满意度","员工满意率","存在违反中央八项规定精神问题受处分人数占员工总数比例","AB类违章中党员占比","反映涉及被考核单位干部员工的信访举报件数占员工总数比例","因发生违纪违法问题受处分人数占员工总数比例"],"answer":[0,1,2,3,4,5]},{"q":"2026年党建责任制考核扣分项目中，\"规定动作类\"包括（）。","options":["未严格落实\"第一议题\"制度","未落实每年组织1次党章专题学习交流","未落实每年开展至少一次谈心谈话工作要求","重大事项未及时向上级党组织请示报告"],"answer":[0,1,2,3]},{"q":"2026年党建责任制考核关于结果运用，下列说法正确的有（）。","options":["考核评价等次未达到\"好\"的，党支部书记、副书记年度综合考核不得确定为\"优秀\"等次","党支部考核结果为\"较好\"\"一般\"的，本支部党员评为\"优秀\"的一般不超过20%，且党支部书记不能评为\"优秀\"","连续两年考核为\"一般\"的，不得被评选为先进基层党组织或标杆党支部","对考核成绩排名靠前的党务工作者予以一定奖励"],"answer":[0,1,2,3]},{"q":"干部选拔任用、评先选优要注重征求党支部意见。在干部考察任用时注重通过党支部了解掌握党员干部（）等情况。","options":["日常表现","廉洁情况","群众评价","民主评议党员"],"answer":[0,3]},{"q":"思想政治工作要深入细致、做在平常。建立健全党支部书记、支委、党员与党员、群众结对机制，做深做细()等工作，全面深入掌握了解支部党员身心、工作和生活动态。","options":["关怀帮助","谈心谈话","家访","慰问"],"answer":[0,1,2]},{"q":"原则上（）等方面的问题不能作为延期换届的理由。","options":["资格审查不过关","班子配备不到位","候选人廉洁意见不过关","会务准备不到位"],"answer":[1,2,3]},{"q":"党支部要担负起直接（）和组织群众、宣传群众、凝聚群众、服务群众的职责，发挥好战斗堡垒作用。","options":["教育党员","管理党员","监督党员","服务党员"],"answer":[0,1,2]},{"q":"党组要在批准其设立的党组织领导下，在本部门本单位发挥好（）的重要作用，确保党中央和上级党组织决策部署在本部门本单位贯彻落实。","options":["把方向","管大局","保落实","促发展"],"answer":[0,1,2]},{"q":"党员要强化党的意识和组织观念，自觉做到（）。","options":["思想上认同组织","政治上依靠组织","工作上服从组织","感情上信赖组织"],"answer":[0,1,2,3]},{"q":"工会、共青团、妇联等群团组织要坚定不移坚持党的领导，坚定不移走中国特色社会主义群团发展道路，不折不扣落实党中央关于群团改革的决策部署，切实增强群团组织的（）、（）、（）。","options":["政治性","服务性","先进性","群众性"],"answer":[0,2,3]},{"q":"党组（党委）理论学习中心组主要由()，()，()，纪检监察机构负责人等组成，可以根据学习需要适当吸收有关人员参加。","options":["党组（党委）领导班子成员","直属党委委员、总师","党的建设工作部门主要负责人","行政工作部门主要负责人"],"answer":[0,1,2]},{"q":"网公司文化理念应如何融入业务发展？（ ）","options":["作为设计业务流程的准则","作为推进业务发展的准则","着力打造安全文化、服务文化等专业文化","重点发展科技创新文化"],"answer":[0,1,2]},{"q":"以下哪些是推动“知行”文化品牌的具体抓手？（ ）","options":["“知行大讲堂”","《知行》文化内刊","知行文化丛书","科技创新平台"],"answer":[0,1,2]},{"q":"以下哪些属于“知行”文化品牌建设的载体？（ ）","options":["知行文化展厅","知行（党建、职工）书屋","知行教育扶贫","数字化营销平台"],"answer":[0,1,2]},{"q":"“知行”文化品牌的建设目标包括哪些？（ ）","options":["增强公司文化品牌的感召力","提升公司文化品牌的影响力","提高企业短期利润","扩大市场占有率"],"answer":[0,1]},{"q":"健全新闻出品安全制度流程，严格落实“三审三校”，严把（）。","options":["政治关","内容关","文字关","保密关"],"answer":[0,1,2,3]},{"q":"舆情“三库”：（）。","options":["风险库","口径库","案例库","法规库"],"answer":[0,1,2]},{"q":"党的基层组织，根据工作需要和党员人数，经上级党组织批准，分别设立（）","options":["党的基层委员会","总支部委员会","支部委员会","党的工作委员会"],"answer":[0,1,2]},{"q":"（）由党员大会选举产生","options":["基层委员会","总支部委员会","支部委员会","党的工作委员会"],"answer":[1,2]},{"q":"党的纪律主要包括（  ）","options":["政治纪律、组织纪律","廉洁纪律、群众纪律","工作纪律、生活纪律","学习纪律、财经纪律"],"answer":[0,1,2]},{"q":"党员的纪律处分有哪些（    ）","options":["警告","严重警告","撤销党内职务","留党察看","开除党籍"],"answer":[0,1,2,3,4]},{"q":"党员在留党察看期间没有（   ）","options":["选举权","发言权","表决权","被选举权"],"answer":[0,2,3]},{"q":"党支部一般每年开展1次民主评议党员，组织党员（  ）进行党性分析","options":["合格党员标准","对照入党誓词","联系个人实际","谈心谈话"],"answer":[0,1,2]},{"q":"党的民主集中制的基本原则包括（  ）","options":["党员个人服从党的组织","少数服从多数","下级组织服从上级组织","全党各个组织和全体党员服从党的全国代表大会和中央委员会"],"answer":[0,1,2,3]},{"q":"《党章》要求，党的各级领导干部要反对（ ）和奢靡之风","options":["形式主义","官僚主义","享乐主义","自由主义"],"answer":[0,1,2]},{"q":"国有企业党组织工作应当遵循以下（  ）原则","options":["坚持加强党的领导和完善公司治理相统一，把党的领导融入公司治理各环节","坚持党建工作与生产经营深度融合，以企业改革发展成果检验党组织工作成效","坚持党管干部、党管人才，培养高素质专业化企业领导人员队伍和人才队伍","坚持抓基层打基础，突出党支部建设，增强基层党组织生机活力","坚持全心全意依靠工人阶级，体现企业职工群众主人翁地位，巩固党执政的阶级基础"],"answer":[0,1,2,3,4]},{"q":"被巡察党支部在巡察整改工作中，需要制定的“三个清单”是指（）。","options":["问题清单","任务清单","责任清单","整改清单"],"answer":[0,1,2]},{"q":"“区岗队”指的是？（）","options":["党员责任区","党员示范岗","党员突击队","党员服务队"],"answer":[0,1,2,3]}];
+  const LS_KEY = 'quiz_wrong_book_v1';
+  const $ = function (id) { return document.getElementById(id); };
+
+  const state = {
+    order: [], optionOrders: [], pos: 0, selected: [],
+    answered: false, correctCount: 0, answeredCount: 0,
+    wrong: new Set(), mode: 'all', shuffleQ: true, shuffleO: false
+  };
+
+  function shuffleArr(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function sameSet(a, b) {
+    if (a.length !== b.length) return false;
+    const s = new Set(b);
+    return a.every(function (x) { return s.has(x); });
+  }
+  function loadWrong() {
+    try { const r = localStorage.getItem(LS_KEY); return r ? new Set(JSON.parse(r)) : new Set(); }
+    catch (e) { return new Set(); }
+  }
+  function saveWrong() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(Array.from(state.wrong))); } catch (e) {}
+  }
+  let toastTimer = null;
+  function toast(msg) {
+    const el = $('toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 1800);
+  }
+  function updateWrongCount() { $('wrongCount').textContent = state.wrong.size; }
+  function updateProgress() {
+    const total = state.order.length;
+    const done = state.pos + (state.answered ? 1 : 0);
+    $('bar').style.width = (total ? (done / total) * 100 : 0) + '%';
+    $('scoreText').textContent = '答对 ' + state.correctCount + ' / 已答 ' + state.answeredCount;
+  }
+
+  function startQuiz(mode) {
+    state.mode = mode;
+    let pool = DATA.map(function (_, i) { return i; });
+    if (mode === 'wrong') {
+      pool = pool.filter(function (i) { return state.wrong.has(DATA[i].q); });
+      if (!pool.length) { toast('错题本是空的，先正常练习吧～'); return; }
+    }
+    if (state.shuffleQ) pool = shuffleArr(pool);
+    state.order = pool;
+    state.optionOrders = pool.map(function (qi) {
+      const n = DATA[qi].options.length;
+      const arr = [];
+      for (let k = 0; k < n; k++) arr.push(k);
+      return state.shuffleO ? shuffleArr(arr) : arr;
+    });
+    state.pos = 0; state.correctCount = 0; state.answeredCount = 0;
+    $('wrongPanel').classList.add('hidden');
+    render();
+  }
+
+  function render() {
+    const total = state.order.length;
+    if (state.pos >= total) { showResult(); return; }
+
+    $('card').classList.remove('hidden');
+    $('result').classList.add('hidden');
+
+    const qi = state.order[state.pos];
+    const q = DATA[qi];
+    const perm = state.optionOrders[state.pos];
+
+    state.selected = []; state.answered = false;
+    $('qnum').textContent = '第 ' + (state.pos + 1) + ' / ' + total + ' 题';
+    $('question').textContent = q.q;
+    $('feedback').className = 'feedback';
+    $('feedback').textContent = '';
+    $('btnSubmit').classList.remove('hidden');
+    $('btnSubmit').disabled = false;
+    $('btnNext').classList.add('hidden');
+
+    const box = $('options');
+    box.innerHTML = '';
+    perm.forEach(function (origIdx, displayIdx) {
+      const div = document.createElement('div');
+      div.className = 'option';
+      div.dataset.orig = origIdx;
+      const lab = document.createElement('span');
+      lab.className = 'label';
+      lab.textContent = String.fromCharCode(65 + displayIdx);
+      const txt = document.createElement('span');
+      txt.textContent = q.options[origIdx];
+      div.appendChild(lab); div.appendChild(txt);
+      div.addEventListener('click', function () { onSelect(origIdx); });
+      box.appendChild(div);
+    });
+    updateProgress();
+  }
+
+  function onSelect(origIdx) {
+    if (state.answered) return;
+    const q = DATA[state.order[state.pos]];
+    if (q.answer.length > 1) {
+      const i = state.selected.indexOf(origIdx);
+      if (i >= 0) state.selected.splice(i, 1); else state.selected.push(origIdx);
+    } else {
+      state.selected = [origIdx];
+    }
+    document.querySelectorAll('#options .option').forEach(function (el) {
+      el.classList.toggle('selected', state.selected.indexOf(Number(el.dataset.orig)) >= 0);
+    });
+  }
+
+  function submit() {
+    if (state.answered) return;
+    const q = DATA[state.order[state.pos]];
+    if (!state.selected.length) { toast('请先选择答案'); return; }
+
+    state.answered = true; state.answeredCount++;
+    const ok = sameSet(state.selected, q.answer);
+    if (ok) { state.correctCount++; state.wrong.delete(q.q); }
+    else { state.wrong.add(q.q); }
+    saveWrong(); updateWrongCount();
+
+    const perm = state.optionOrders[state.pos];
+    document.querySelectorAll('#options .option').forEach(function (el) {
+      const orig = Number(el.dataset.orig);
+      el.classList.add('disabled');
+      el.classList.remove('selected');
+      if (q.answer.indexOf(orig) >= 0) el.classList.add('correct');
+      else if (state.selected.indexOf(orig) >= 0) el.classList.add('wrong');
+    });
+
+    const letters = q.answer.slice().sort(function (a, b) { return a - b; })
+      .map(function (i) { return String.fromCharCode(65 + perm.indexOf(i)); }).join('、');
+
+    const fb = $('feedback');
+    fb.className = 'feedback show ' + (ok ? 'ok' : 'no');
+    fb.textContent = ok ? '✅ 回答正确！'
+      : '❌ 回答错误，正确答案：' + letters + '\n' + q.answer.map(function (i) { return q.options[i]; }).join('  /  ');
+
+    $('btnSubmit').classList.add('hidden');
+    const nextBtn = $('btnNext');
+    nextBtn.classList.remove('hidden');
+    nextBtn.textContent = (state.pos === state.order.length - 1) ? '查看成绩 →' : '下一题 →';
+    updateProgress();
+  }
+
+  function next() {
+    if (!state.answered) return;
+    state.pos++; render();
+  }
+
+  function showResult() {
+    $('card').classList.add('hidden');
+    $('bar').style.width = '100%';
+    const total = state.answeredCount;
+    const rate = total ? Math.round(state.correctCount / total * 100) : 0;
+    let emoji = '🎉', title = '全部完成，太棒了！';
+    if (rate < 60) { emoji = '💪'; title = '继续加油！'; }
+    else if (rate < 85) { emoji = '👍'; title = '不错哦，再加把劲！'; }
+
+    const r = $('result');
+    r.classList.remove('hidden');
+    r.innerHTML = '<div class="res-emoji">' + emoji + '</div>'
+      + '<div class="res-title">' + title + '</div>'
+      + '<div class="res-score">' + state.correctCount + ' <span>/ ' + total + '</span></div>'
+      + '<div class="res-rate">正确率 ' + rate + '%　·　错题本共 ' + state.wrong.size + ' 道</div>'
+      + '<div class="actions">'
+      + '<button class="primary" id="againBtn">再来一轮</button>'
+      + '<button id="wrongBtn2">查看错题本</button></div>';
+    $('againBtn').onclick = function () { startQuiz('all'); };
+    $('wrongBtn2').onclick = openWrongPanel;
+  }
+
+  function openWrongPanel() {
+    const list = $('wrongList');
+    list.innerHTML = '';
+    const items = DATA.filter(function (q) { return state.wrong.has(q.q); });
+    if (!items.length) {
+      list.innerHTML = '<p class="empty">还没有错题，继续保持！</p>';
+    } else {
+      items.forEach(function (q, i) {
+        const div = document.createElement('div');
+        div.className = 'wrong-item';
+        const wq = document.createElement('div');
+        wq.className = 'wq';
+        wq.textContent = (i + 1) + '. ' + q.q;
+        const wa = document.createElement('div');
+        wa.className = 'wa';
+        wa.textContent = '答案：' + q.answer.slice().sort(function (a, b) { return a - b; })
+          .map(function (k) { return String.fromCharCode(65 + k) + '. ' + q.options[k]; }).join('　');
+        div.appendChild(wq); div.appendChild(wa);
+        list.appendChild(div);
+      });
+    }
+    $('practiceWrong').disabled = !items.length;
+    $('wrongPanel').classList.remove('hidden');
+  }
+
+  function bind() {
+    $('btnSubmit').onclick = submit;
+    $('btnNext').onclick = next;
+    $('btnShuffleQ').onclick = function () {
+      state.shuffleQ = !state.shuffleQ;
+      this.textContent = '🔀 打乱题目：' + (state.shuffleQ ? '开' : '关');
+      this.classList.toggle('active', state.shuffleQ);
+      startQuiz(state.mode);
+    };
+    $('btnShuffleO').onclick = function () {
+      state.shuffleO = !state.shuffleO;
+      this.textContent = '🎲 选项乱序：' + (state.shuffleO ? '开' : '关');
+      this.classList.toggle('active', state.shuffleO);
+      startQuiz(state.mode);
+    };
+    $('btnWrong').onclick = openWrongPanel;
+    $('closeWrong').onclick = function () { $('wrongPanel').classList.add('hidden'); };
+    $('wrongPanel').onclick = function (e) { if (e.target === this) this.classList.add('hidden'); };
+    $('practiceWrong').onclick = function () { startQuiz('wrong'); };
+    $('clearWrong').onclick = function () {
+      state.wrong.clear(); saveWrong(); updateWrongCount();
+      openWrongPanel(); toast('错题本已清空');
+    };
+    document.addEventListener('keydown', function (e) {
+      if (!$('wrongPanel').classList.contains('hidden')) return;
+      if (state.pos >= state.order.length) return;
+      const k = e.key.toUpperCase();
+      if (/^[A-H]$/.test(k) && !state.answered) {
+        const perm = state.optionOrders[state.pos];
+        const di = k.charCodeAt(0) - 65;
+        if (di < perm.length) onSelect(perm[di]);
+        e.preventDefault();
+      } else if (e.key === 'Enter') {
+        if (!state.answered) submit(); else next();
+        e.preventDefault();
+      }
+    });
+  }
+
+  state.wrong = loadWrong();
+  updateWrongCount();
+  bind();
+  if (!DATA.length) {
+    $('question').textContent = '题库为空，请检查 text.xlsx。';
+    $('btnSubmit').disabled = true;
+  } else {
+    startQuiz('all');
+  }
+})();
+</script>
+</body>
+</html>
