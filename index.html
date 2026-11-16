@@ -321,19 +321,28 @@ button.close{padding:6px 12px;border-radius:8px;background:#f3f4f8;box-shadow:no
   }
 
   function toggleCurrentFav() {
-    const qi = state.order[state.pos];
-    const q = DATA[qi];
-    if (state.fav.has(q.q)) {
-      state.fav.delete(q.q);
-      toast('已取消收藏');
-    } else {
-      state.fav.add(q.q);
-      toast('已加入收藏夹');
-    }
-    saveSet(LS_FAV, state.fav);
-    updateBadges();
-    render();
+  const qi = state.order[state.pos];
+  const q = DATA[qi];
+  const favBtn = $('btnFavCurrent');
+
+  if (state.fav.has(q.q)) {
+    state.fav.delete(q.q);
+    toast('已取消收藏');
+    favBtn.textContent = '☆';
+    favBtn.classList.remove('active');
+    favBtn.title = '收藏本题';
+  } else {
+    state.fav.add(q.q);
+    toast('已加入收藏夹');
+    favBtn.textContent = '★';
+    favBtn.classList.add('active');
+    favBtn.title = '取消收藏';
   }
+
+  saveSet(LS_FAV, state.fav);
+  updateBadges();
+  // 移除 render()，避免重置题目状态
+}
 
   function submit() {
     if (state.answered) return;
