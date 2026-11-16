@@ -159,11 +159,8 @@ button.close{padding:6px 12px;border-radius:8px;background:#f3f4f8;box-shadow:no
 <script>
 (function () {
   'use strict';
-
-  // ========== 解密配置 ==========
-  const SECRET_KEY = 'your_custom_secret_key_2026'; // 必须和加密时的密钥完全一致
-
-  // 解密函数
+  
+  const SECRET_KEY = 'your_custom_secret_key_2026'; 
   function decryptData(encryptedStr, key) {
     const raw = decodeURIComponent(escape(atob(encryptedStr)));
     let result = '';
@@ -174,8 +171,6 @@ button.close{padding:6px 12px;border-radius:8px;background:#f3f4f8;box-shadow:no
     }
     return JSON.parse(result);
   }
-
-  // 解密得到题库数据
   const DATA = decryptData(window.QUIZ_ENC_DATA, SECRET_KEY);
 
   // ========== 常量与状态 ==========
